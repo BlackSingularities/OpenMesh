@@ -32,6 +32,9 @@ Najnowsza wersja jest zawsze w **[Releases → Latest](../../releases/latest)**.
 | **Wiadomości prywatne** | Szyfrowane end-to-end, z potwierdzeniem doręczenia ✓✓. |
 | **Szybkie odpowiedzi** | „Jestem OK”, „Gdzie jesteś?”, „Idę do was”… jednym dotknięciem. |
 | **Stany wiadomości** | W kolejce · wysłano do sieci · doręczono; liczba węzłów, przez które przeszła wiadomość. |
+| **Szukanie** | Jedno pole przeszukuje całą historię: wiadomości, kanały i osoby – także te z archiwum. |
+| **Przypinanie i archiwum** | Ważne rozmowy na górze listy, resztę można schować. Przytrzymanie rozmowy otwiera jej opcje. |
+| **Eksport** | Zapis rozmowy albo całej historii do pliku tekstowego (czas, autor, pozycje) przez „Udostępnij”. |
 
 ### Bezpieczeństwo w terenie
 | Funkcja | Opis |
@@ -39,6 +42,8 @@ Najnowsza wersja jest zawsze w **[Releases → Latest](../../releases/latest)**.
 | **SOS** | Wezwanie z pozycją GPS do wszystkich w sieci, z maksymalnym zasięgiem i alarmem dźwiękowym. Wysyłane przytrzymaniem przycisku – bez przypadkowych alarmów. |
 | **Pozycja** | Udostępnianie współrzędnych (GPS działa offline), odległość i kierunek do innych, zapis w stopniach/minutach/sekundach, otwieranie w mapach offline (OsmAnd, Organic Maps). |
 | **W pobliżu** | Radar sieci, osoby bezpośrednio i przez innych, status, poziom baterii, odległość. |
+| **Mapa okolicy** | Osoby z pozycją naniesione względem ciebie: odległość, kierunek, skala, kierunki świata. Rysowana z samych współrzędnych – bez kafelków i bez internetu. |
+| **Latarka alarmowa** | Miganie diodą i ekranem: SOS alfabetem Morse'a, sygnał alpejski (6 mignięć na minutę), szybkie mignięcia albo światło ciągłe. |
 
 ### Prywatność i kryptografia
 - Tożsamość: klucz **P-256** generowany na telefonie; identyfikator = skrót klucza publicznego.

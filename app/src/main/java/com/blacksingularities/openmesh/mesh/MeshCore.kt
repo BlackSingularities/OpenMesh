@@ -469,11 +469,28 @@ class MeshCore(private val app: Context) : NearbyTransport.Listener {
         if (convo == Channel.convoOf(PUBLIC_CHANNEL)) return
         _channels.update { list -> list.filterNot { it.key == convo } }
         saveChannels()
+        updateSettings { it.copy(pinned = it.pinned - convo, archived = it.archived - convo) }
     }
 
     fun setMuted(convo: String, muted: Boolean) {
         _channels.update { list -> list.map { if (it.key == convo) it.copy(muted = muted) else it } }
         saveChannels()
+    }
+
+    /** Przypięta rozmowa trzyma się góry listy (i nigdy nie jest w archiwum). */
+    fun setPinned(convo: String, pinned: Boolean) = updateSettings {
+        it.copy(
+            pinned = if (pinned) it.pinned.filterNot { c -> c == convo } + convo else it.pinned.filterNot { c -> c == convo },
+            archived = if (pinned) it.archived.filterNot { c -> c == convo } else it.archived,
+        )
+    }
+
+    /** Archiwum chowa rozmowę z listy; nowa wiadomość nie przywraca jej automatycznie. */
+    fun setArchived(convo: String, archived: Boolean) = updateSettings {
+        it.copy(
+            archived = if (archived) it.archived.filterNot { c -> c == convo } + convo else it.archived.filterNot { c -> c == convo },
+            pinned = if (archived) it.pinned.filterNot { c -> c == convo } else it.pinned,
+        )
     }
 
     fun setBlocked(peerId: String, blocked: Boolean) {

@@ -29,6 +29,10 @@ import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.FlashOn
+import androidx.compose.material.icons.rounded.Inventory2
+import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Map
 import androidx.compose.material.icons.rounded.MyLocation
@@ -293,6 +297,14 @@ private fun ColumnScope.SosSheet(vm: MeshViewModel) {
             modifier = Modifier.fillMaxWidth(),
         )
     }
+    Spacer(Modifier.height(10.dp))
+    PillButton(
+        "Latarka alarmowa",
+        { vm.openBeacon() },
+        Modifier.fillMaxWidth(),
+        primary = false,
+        icon = Icons.Rounded.FlashOn,
+    )
     Text(
         "W Polsce numer alarmowy to 112, w górach GOPR/TOPR: 985 lub 601 100 300. Gdy masz choć minimalny zasięg komórkowy – dzwoń.",
         color = Palette.TextFaint,
@@ -424,6 +436,38 @@ private fun ColumnScope.ConvoSheet(vm: MeshViewModel, convo: String) {
             Spacer(Modifier.height(10.dp))
         }
     }
+    val settings by vm.core.settings.collectAsStateWithLifecycle()
+    val title = if (isDm(convo)) {
+        vm.core.peers.value[peerOf(convo)]?.name ?: "rozmowa-prywatna"
+    } else {
+        "#" + (channels.firstOrNull { it.key == convo }?.name ?: "")
+    }
+    SettingsGroup {
+        SettingRow(
+            if (convo in settings.pinned) "Odepnij rozmowę" else "Przypnij na górze",
+            subtitle = "Przypięte rozmowy trzymają się góry listy.",
+            icon = Icons.Rounded.PushPin,
+            onClick = { vm.togglePinned(convo) },
+        )
+        RowDivider()
+        SettingRow(
+            if (convo in settings.archived) "Przywróć z archiwum" else "Przenieś do archiwum",
+            subtitle = "Archiwum chowa rozmowę z listy; nadal ją znajdziesz przez szukanie.",
+            icon = Icons.Rounded.Inventory2,
+            onClick = { vm.toggleArchived(convo) },
+        )
+        RowDivider()
+        SettingRow(
+            "Eksportuj zapis rozmowy",
+            subtitle = "Plik tekstowy z czasem, autorami i pozycjami – do wysłania lub wydruku.",
+            icon = Icons.Rounded.Description,
+            onClick = {
+                vm.exportConvo(convo, title)
+                vm.sheet = null
+            },
+        )
+    }
+    Spacer(Modifier.height(10.dp))
     SettingsGroup {
         SettingRow(
             if (confirm) "Dotknij ponownie, aby usunąć" else "Wyczyść historię rozmowy",

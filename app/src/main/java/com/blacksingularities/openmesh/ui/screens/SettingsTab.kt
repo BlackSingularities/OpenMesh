@@ -18,6 +18,10 @@ import androidx.compose.material.icons.rounded.BatteryStd
 import androidx.compose.material.icons.rounded.Bluetooth
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.FlashOn
+import androidx.compose.material.icons.rounded.Map
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Hub
@@ -188,6 +192,31 @@ fun SettingsTab(vm: MeshViewModel) {
             }
         }
 
+        item { SectionTitle("Narzędzia") }
+        item {
+            SettingsGroup {
+                SettingRow(
+                    "Mapa okolicy",
+                    subtitle = "Kto gdzie jest – rysowana z pozycji GPS, bez internetu",
+                    icon = Icons.Rounded.Map,
+                    onClick = { vm.openMapScreen() },
+                ) { Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, tint = Palette.TextFaint, modifier = Modifier.size(18.dp)) }
+                RowDivider()
+                SettingRow(
+                    "Latarka alarmowa",
+                    subtitle = "Miganie SOS alfabetem Morse'a diodą i ekranem",
+                    icon = Icons.Rounded.FlashOn,
+                    onClick = { vm.openBeacon() },
+                ) { Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, tint = Palette.TextFaint, modifier = Modifier.size(18.dp)) }
+                RowDivider()
+                SettingRow(
+                    "Szukaj w historii",
+                    subtitle = "Wiadomości, kanały i osoby zapisane na tym telefonie",
+                    icon = Icons.Rounded.Search,
+                    onClick = { vm.openSearch() },
+                ) { Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, tint = Palette.TextFaint, modifier = Modifier.size(18.dp)) }
+            }
+        }
         item { SectionTitle("Powiadomienia") }
         item {
             SettingsGroup {
@@ -222,6 +251,13 @@ fun SettingsTab(vm: MeshViewModel) {
                     icon = Icons.Rounded.Fingerprint,
                     onClick = { vm.sheet = Sheet.Identity },
                 ) { Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, tint = Palette.TextFaint, modifier = Modifier.size(18.dp)) }
+                RowDivider()
+                SettingRow(
+                    "Eksportuj całą historię",
+                    subtitle = "Jeden plik tekstowy ze wszystkimi rozmowami, osobami i pozycjami",
+                    icon = Icons.Rounded.Description,
+                    onClick = { vm.exportEverything() },
+                )
                 RowDivider()
                 SettingRow(
                     if (confirmClear) "Dotknij ponownie, aby usunąć" else "Wyczyść historię rozmów",

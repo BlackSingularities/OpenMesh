@@ -10,6 +10,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,12 +38,17 @@ import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.material.icons.rounded.FlashOn
 import androidx.compose.material.icons.rounded.Hub
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Inventory2
+import androidx.compose.material.icons.rounded.Map
 import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material.icons.rounded.Radar
+import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Tag
 import androidx.compose.material.icons.rounded.Warning
@@ -147,6 +153,8 @@ private fun Header(vm: MeshViewModel) {
             Text(title, color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)
             MeshStatusLine(settings.meshEnabled, state, links.size) { vm.tab = Tab.NEARBY }
         }
+        IconCircle(Icons.Rounded.Search, "Szukaj", { vm.openSearch() }, background = Palette.CardHigh)
+        Spacer(Modifier.width(8.dp))
         Row(
             Modifier
                 .clip(Pill)
@@ -278,6 +286,8 @@ data class ConvoSummary(
     val online: Boolean?,
     val sortKey: Long,
     val isChannel: Boolean,
+    val pinned: Boolean = false,
+    val archived: Boolean = false,
 )
 
 @Composable
@@ -288,9 +298,10 @@ private fun ChatsTab(vm: MeshViewModel) {
     val unread by vm.core.unread.collectAsStateWithLifecycle()
     val seenChannels by vm.core.seenChannels.collectAsStateWithLifecycle()
     val links by vm.core.transport.links.collectAsStateWithLifecycle()
+    val settings by vm.core.settings.collectAsStateWithLifecycle()
     val now = rememberNow()
 
-    val convos = remember(messages, channels, peers, unread, links, now) {
+    val all = remember(messages, channels, peers, unread, links, now) {
         val lastBy = HashMap<String, Message>()
         messages.forEach { m -> if ((lastBy[m.convo]?.ts ?: 0) <= m.ts) lastBy[m.convo] = m }
         val linked = links.values.mapTo(HashSet()) { it.peerId }
@@ -320,12 +331,47 @@ private fun ChatsTab(vm: MeshViewModel) {
         val pub = Channel.convoOf(PUBLIC_CHANNEL)
         list.sortedWith(compareByDescending<ConvoSummary> { it.convo == pub }.thenByDescending { it.sortKey })
     }
+    // Przypięte zawsze na górze, archiwum schowane pod osobnym wierszem.
+    val convos = remember(all, settings.pinned, settings.archived) {
+        val marked = all.map { it.copy(pinned = it.convo in settings.pinned, archived = it.convo in settings.archived) }
+        marked.filter { it.pinned }.sortedByDescending { it.sortKey } + marked.filter { !it.pinned && !it.archived }
+    }
+    val archived = remember(all, settings.archived) {
+        all.filter { it.convo in settings.archived }.map { it.copy(archived = true) }.sortedByDescending { it.sortKey }
+    }
     val discoverable = remember(seenChannels, channels) {
         seenChannels.values.filter { s -> channels.none { it.key == Channel.convoOf(s.name) } }.sortedByDescending { it.count }
     }
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 120.dp)) {
-        items(convos, key = { it.convo }) { c -> ConvoRow(c, vm.core.myId, now) { vm.open(c.convo) } }
+        items(convos, key = { it.convo }) { c ->
+            ConvoRow(c, vm.core.myId, now, onClick = { vm.open(c.convo) }, onLongClick = { vm.sheet = Sheet.ConvoInfo(c.convo) })
+        }
+        if (archived.isNotEmpty()) {
+            item {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCard).clickable { vm.showArchived = !vm.showArchived }
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Rounded.Inventory2, null, tint = Palette.TextDim, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        "Archiwum · " + archived.size + " " + plural(archived.size, "rozmowa", "rozmowy", "rozmów"),
+                        color = Palette.TextDim,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(if (vm.showArchived) "Ukryj" else "Pokaż", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            if (vm.showArchived) {
+                items(archived, key = { "arch:" + it.convo }) { c ->
+                    ConvoRow(c, vm.core.myId, now, onClick = { vm.open(c.convo) }, onLongClick = { vm.sheet = Sheet.ConvoInfo(c.convo) })
+                }
+            }
+        }
         if (discoverable.isNotEmpty()) {
             item { SectionTitle("Kanały w pobliżu", Modifier.padding(start = 8.dp)) }
             items(discoverable, key = { "seen:" + it.name }) { s ->
@@ -358,9 +404,13 @@ private fun ChatsTab(vm: MeshViewModel) {
 private val RoundedCard = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
 
 @Composable
-private fun ConvoRow(c: ConvoSummary, myId: String, now: Long, onClick: () -> Unit) {
+private fun ConvoRow(c: ConvoSummary, myId: String, now: Long, onClick: () -> Unit, onLongClick: () -> Unit = {}) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCard).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 10.dp),
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCard)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(horizontal = 8.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (c.isChannel) {
@@ -372,6 +422,10 @@ private fun ConvoRow(c: ConvoSummary, myId: String, now: Long, onClick: () -> Un
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(c.title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                if (c.pinned) {
+                    Spacer(Modifier.width(6.dp))
+                    Icon(Icons.Rounded.PushPin, "Przypięta", tint = Palette.TextDim, modifier = Modifier.size(13.dp))
+                }
                 if (c.muted) {
                     Spacer(Modifier.width(6.dp))
                     Icon(Icons.Rounded.NotificationsOff, "Wyciszony", tint = Palette.TextFaint, modifier = Modifier.size(14.dp))
@@ -475,6 +529,12 @@ private fun NearbyTab(vm: MeshViewModel) {
             }
         }
         item { MyPositionCard(vm) }
+        item {
+            Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                PillButton("Mapa okolicy", { vm.openMapScreen() }, icon = Icons.Rounded.Map, primary = false, modifier = Modifier.weight(1f))
+                PillButton("Latarka", { vm.openBeacon() }, icon = Icons.Rounded.FlashOn, primary = false, modifier = Modifier.weight(1f))
+            }
+        }
         item { SectionTitle("W zasięgu sieci · ${online.size}") }
         if (online.isEmpty()) {
             item {

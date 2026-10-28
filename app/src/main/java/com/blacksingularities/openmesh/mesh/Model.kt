@@ -135,6 +135,10 @@ data class Stats(
 @Serializable
 enum class Topology { CLUSTER, STAR }
 
+/** Wzór migania latarki alarmowej. */
+@Serializable
+enum class BeaconPattern { SOS, SLOW, FAST, STEADY }
+
 @Serializable
 data class Settings(
     val nick: String = "",
@@ -153,6 +157,12 @@ data class Settings(
     val autoUpdate: Boolean = true,
     val autoInstall: Boolean = true,
     val lastUpdateCheck: Long = 0L,
+    /** Rozmowy przypięte na górze listy. */
+    val pinned: List<String> = emptyList(),
+    /** Rozmowy schowane do archiwum. */
+    val archived: List<String> = emptyList(),
+    val beaconPattern: BeaconPattern = BeaconPattern.SOS,
+    val beaconScreen: Boolean = true,
 )
 
 const val PUBLIC_CHANNEL = "ogólny"

@@ -8,7 +8,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.blacksingularities.openmesh.data.Export
 import com.blacksingularities.openmesh.mesh
+import com.blacksingularities.openmesh.mesh.BeaconPattern
 import com.blacksingularities.openmesh.mesh.Channel
 import com.blacksingularities.openmesh.mesh.MeshEvent
 import com.blacksingularities.openmesh.mesh.MeshService
@@ -19,6 +21,7 @@ import com.blacksingularities.openmesh.mesh.dmConvo
 import com.blacksingularities.openmesh.update.UpdateManager
 import com.blacksingularities.openmesh.update.UpdateState
 import com.blacksingularities.openmesh.update.isNewer
+import com.blacksingularities.openmesh.util.Beacon
 import com.blacksingularities.openmesh.util.Geo
 import com.blacksingularities.openmesh.util.GeoPoint
 import com.blacksingularities.openmesh.util.Permissions
@@ -32,6 +35,15 @@ sealed interface Screen {
     data object Onboarding : Screen
     data object Main : Screen
     data class Chat(val convo: String) : Screen
+
+    /** Szukanie w całej historii: wiadomości, kanały i osoby. */
+    data object Search : Screen
+
+    /** Mapa okolicy rysowana z pozycji GPS – bez internetu i bez kafelków map. */
+    data object Map : Screen
+
+    /** Latarka alarmowa migająca wzorem SOS. */
+    data object Beacon : Screen
 }
 
 sealed interface Sheet {
@@ -64,6 +76,12 @@ class MeshViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Tekst przekazany z innej aplikacji („Udostępnij → OpenMesh”) – trafia do pola wiadomości. */
     var sharedText by mutableStateOf<String?>(null)
+
+    /** Tekst szukania – wspólny dla ekranu wyszukiwania. */
+    var query by mutableStateOf("")
+
+    /** Czy lista rozmów pokazuje też archiwum. */
+    var showArchived by mutableStateOf(false)
 
     /** Zmiana stanu uprawnień (po powrocie z ustawień systemu) – odświeża ostrzeżenia. */
     var permissionsTick by mutableStateOf(0)
@@ -98,6 +116,23 @@ class MeshViewModel(app: Application) : AndroidViewModel(app) {
 
     fun openPeer(peerId: String) = open(dmConvo(peerId))
 
+    fun openSearch() {
+        query = ""
+        sheet = null
+        screen = Screen.Search
+    }
+
+    fun openMapScreen() {
+        sheet = null
+        screen = Screen.Map
+        refreshLocation()
+    }
+
+    fun openBeacon() {
+        sheet = null
+        screen = Screen.Beacon
+    }
+
     /** Zwraca false, gdy nie ma dokąd wrócić (wtedy system zamyka aplikację). */
     fun back(): Boolean {
         if (sheet != null) {
@@ -108,6 +143,10 @@ class MeshViewModel(app: Application) : AndroidViewModel(app) {
             is Screen.Chat -> {
                 screen = Screen.Main
                 core.activeConvo = null
+                true
+            }
+            Screen.Search, Screen.Map, Screen.Beacon -> {
+                screen = Screen.Main
                 true
             }
             Screen.Main -> if (tab != Tab.CHATS) {
@@ -229,7 +268,81 @@ class MeshViewModel(app: Application) : AndroidViewModel(app) {
         runCatching { ctx.startActivity(Intent.createChooser(i, "Udostępnij").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 
+    // endregion
+
+    // region Rozmowy: przypięcia, archiwum, eksport
+
+    fun togglePinned(convo: String) {
+        val pinned = convo in core.settings.value.pinned
+        core.setPinned(convo, !pinned)
+        toast(if (pinned) "Odpięto rozmowę" else "Przypięto na górze listy")
+    }
+
+    fun toggleArchived(convo: String) {
+        val archived = convo in core.settings.value.archived
+        core.setArchived(convo, !archived)
+        toast(if (archived) "Przywrócono z archiwum" else "Przeniesiono do archiwum")
+    }
+
+    fun exportConvo(convo: String, title: String) {
+        val msgs = core.messages.value.filter { it.convo == convo }
+        if (msgs.isEmpty()) {
+            toast("Ta rozmowa jest pusta")
+            return
+        }
+        shareFile(Export.transcript(convo, title, msgs, myName()), title)
+    }
+
+    fun exportEverything() {
+        val msgs = core.messages.value
+        if (msgs.isEmpty()) {
+            toast("Nie ma jeszcze żadnych wiadomości")
+            return
+        }
+        shareFile(
+            Export.fullReport(msgs, core.channels.value, core.peers.value, core.myId, myName()),
+            "cala-historia",
+        )
+    }
+
+    private fun myName() = core.settings.value.nick.ifBlank { "Ja" }
+
+    private fun shareFile(text: String, name: String) {
+        runCatching {
+            val uri = Export.write(ctx, name, text)
+            val chooser = Intent.createChooser(Export.shareIntent(uri, Export.fileName(name)), "Zapisz lub wyślij zapis")
+            ctx.startActivity(chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }.onFailure { toast("Nie udało się przygotować pliku") }
+    }
+
+    // endregion
+
+    // region Latarka alarmowa
+
+    val beaconAvailable get() = Beacon.hasTorch(ctx)
+
+    fun toggleBeacon() {
+        val s = core.settings.value
+        if (!Beacon.running.value && !beaconAvailable && !s.beaconScreen) {
+            toast("Ten telefon nie ma diody – włącz miganie ekranem")
+            return
+        }
+        Beacon.toggle(ctx, s.beaconPattern)
+    }
+
+    fun setBeaconPattern(pattern: BeaconPattern) {
+        core.updateSettings { it.copy(beaconPattern = pattern) }
+        if (Beacon.running.value) Beacon.start(ctx, pattern)
+    }
+
+    fun stopBeacon() = Beacon.stop(ctx)
+
+    // endregion
+
+    // region Dane
+
     fun wipeAll() {
+        Beacon.stop(ctx)
         MeshService.stop(ctx)
         core.wipeAll()
         sheet = null

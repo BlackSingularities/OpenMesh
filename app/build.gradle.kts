@@ -76,6 +76,7 @@ kotlin {
         freeCompilerArgs.add("-Xannotation-default-target=param-property")
         optIn.add("androidx.compose.material3.ExperimentalMaterial3Api")
         optIn.add("androidx.compose.foundation.layout.ExperimentalLayoutApi")
+        optIn.add("androidx.compose.foundation.ExperimentalFoundationApi")
     }
 }
 

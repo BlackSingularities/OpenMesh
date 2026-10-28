@@ -27,9 +27,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.blacksingularities.openmesh.ui.screens.BeaconScreen
 import com.blacksingularities.openmesh.ui.screens.ChatScreen
 import com.blacksingularities.openmesh.ui.screens.HomeScreen
+import com.blacksingularities.openmesh.ui.screens.MapScreen
 import com.blacksingularities.openmesh.ui.screens.OnboardingScreen
+import com.blacksingularities.openmesh.ui.screens.SearchScreen
 import com.blacksingularities.openmesh.ui.screens.Sheets
 import com.blacksingularities.openmesh.ui.theme.Palette
 import com.blacksingularities.openmesh.ui.theme.Pill
@@ -37,14 +40,17 @@ import com.blacksingularities.openmesh.ui.theme.panel
 
 @Composable
 fun AppRoot(vm: MeshViewModel) {
-    BackHandler(enabled = vm.sheet != null || vm.screen is Screen.Chat || (vm.screen == Screen.Main && vm.tab != Tab.CHATS)) {
+    val canGoBack = vm.sheet != null ||
+        (vm.screen != Screen.Main && vm.screen != Screen.Onboarding) ||
+        (vm.screen == Screen.Main && vm.tab != Tab.CHATS)
+    BackHandler(enabled = canGoBack) {
         vm.back()
     }
     Box(Modifier.fillMaxSize().background(Palette.Ink)) {
         AnimatedContent(
             targetState = vm.screen,
             transitionSpec = {
-                val forward = targetState is Screen.Chat
+                val forward = targetState !is Screen.Main
                 if (initialState is Screen.Onboarding) {
                     fadeIn(tween(260)) togetherWith fadeOut(tween(200))
                 } else {
@@ -59,6 +65,9 @@ fun AppRoot(vm: MeshViewModel) {
                 Screen.Onboarding -> OnboardingScreen(vm)
                 Screen.Main -> HomeScreen(vm)
                 is Screen.Chat -> ChatScreen(vm, s.convo)
+                Screen.Search -> SearchScreen(vm)
+                Screen.Map -> MapScreen(vm)
+                Screen.Beacon -> BeaconScreen(vm)
             }
         }
         Sheets(vm)
