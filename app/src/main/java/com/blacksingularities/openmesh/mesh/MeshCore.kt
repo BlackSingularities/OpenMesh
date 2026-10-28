@@ -917,7 +917,7 @@ class MeshCore(private val app: Context) : NearbyTransport.Listener {
 
         /** Po tym czasie ciszy prosimy o brakujące części, a po dłuższym porzucamy odbiór. */
         private const val ASSEMBLY_ASK_AFTER = 25_000L
-        private const val ASSEMBLY_TIMEOUT = 20 * MINUTE
+        private const val ASSEMBLY_TIMEOUT = 20 * 60_000L
         private const val CACHE_LIMIT = 400
         private const val SYNC_LIMIT = 200
         private const val MESSAGE_LIMIT = 10_000

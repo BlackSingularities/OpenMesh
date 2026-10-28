@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import android.net.Uri
 import com.blacksingularities.openmesh.data.Attachments
 import com.blacksingularities.openmesh.data.Export
 import com.blacksingularities.openmesh.mesh
