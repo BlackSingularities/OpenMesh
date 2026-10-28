@@ -18,12 +18,13 @@ class ExportTest {
         lon: Double? = null,
         sos: Boolean = false,
         status: MsgStatus = MsgStatus.SENT,
+        ts: Long = 1_700_000_000_000,
     ) = Message(
         id = id,
         convo = "ch:ogólny",
         from = if (mine) "me" else "ania",
         fromName = if (mine) "Ja" else "Ania",
-        ts = 1_700_000_000_000,
+        ts = ts,
         text = text,
         lat = lat,
         lon = lon,
@@ -38,8 +39,8 @@ class ExportTest {
             convo = "ch:ogólny",
             title = "#ogólny",
             messages = listOf(
-                msg("2", "Jesteśmy na przełęczy", lat = 49.2321, lon = 19.9810),
-                msg("1", "Cześć"),
+                msg("2", "Jesteśmy na przełęczy", lat = 49.2321, lon = 19.9810, ts = 1_700_000_600_000),
+                msg("1", "Cześć", ts = 1_700_000_000_000),
             ),
             myName = "Marek",
         )
