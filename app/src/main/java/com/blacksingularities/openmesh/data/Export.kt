@@ -101,7 +101,7 @@ object Export {
     }
 
     fun fileName(name: String): String {
-        val safe = name.trim().removePrefix("#").replace(Regex("[^\p{L}\p{N}._-]+"), "-").trim('-').ifEmpty { "rozmowa" }
+        val safe = name.trim().removePrefix("#").replace(Regex("""[^\p{L}\p{N}._-]+"""), "-").trim('-').ifEmpty { "rozmowa" }
         return "OpenMesh-" + safe.take(40) + "-" + fileStamp.format(Date()) + ".txt"
     }
 
