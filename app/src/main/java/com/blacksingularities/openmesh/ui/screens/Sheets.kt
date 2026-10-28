@@ -35,6 +35,7 @@ import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.SaveAlt
 import androidx.compose.material.icons.rounded.FlashOn
 import androidx.compose.material.icons.rounded.Inventory2
+import androidx.compose.material.icons.rounded.LocalCafe
 import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Map
@@ -648,7 +649,15 @@ private fun ColumnScope.AboutSheet() {
         Text(t, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
         Text(d, color = Palette.TextDim, fontSize = 13.5.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 2.dp))
     }
-    Text("github.com/" + BuildConfig.UPDATE_REPO, color = Palette.TextFaint, fontSize = 12.sp, modifier = Modifier.padding(top = 16.dp))
+    val uri = androidx.compose.ui.platform.LocalUriHandler.current
+    Text(
+        "Pomysł i wykonanie: Adam Rędzikowski · redzikowski.com", color = Palette.TextDim, fontSize = 13.sp,
+        modifier = Modifier.padding(top = 16.dp).clickable { runCatching { uri.openUri("https://redzikowski.com") } },
+    )
+    PillButton(
+        "Postaw kawę", { runCatching { uri.openUri("https://buycoffee.to/adamredzikowski") } },
+        Modifier.fillMaxWidth().padding(top = 12.dp), icon = Icons.Rounded.LocalCafe,
+    )
 }
 
 // endregion

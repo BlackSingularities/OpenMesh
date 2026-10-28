@@ -6,7 +6,7 @@
 
 ## Pobieranie
 
-Najnowsza wersja jest zawsze w **[Releases → Latest](../../releases/latest)**. Każdy merge do `main` buduje i publikuje nowe wydanie, a aplikacja sama się aktualizuje, gdy telefon ma internet.
+Najnowsza wersja jest zawsze w **[Releases → Latest](../../releases/latest)**. Każdy wypchnięty tag `vX.Y.Z` buduje i publikuje nowe wydanie, a aplikacja sama się aktualizuje, gdy telefon ma internet.
 
 1. Pobierz `OpenMesh-x.y.z.apk` na telefon.
 2. Otwórz plik i zezwól na instalację z tego źródła.
