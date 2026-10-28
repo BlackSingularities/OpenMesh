@@ -8,6 +8,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import android.net.Uri
+import com.blacksingularities.openmesh.data.Attachments
 import com.blacksingularities.openmesh.data.Export
 import com.blacksingularities.openmesh.mesh
 import com.blacksingularities.openmesh.mesh.BeaconPattern
@@ -266,6 +268,59 @@ class MeshViewModel(app: Application) : AndroidViewModel(app) {
     fun shareOutside(text: String) {
         val i = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
         runCatching { ctx.startActivity(Intent.createChooser(i, "Udostępnij").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+    }
+
+    // endregion
+
+    // region Załączniki
+
+    /** Wysyła wybrane zdjęcie albo plik do rozmowy. */
+    fun sendAttachment(convo: String, uri: Uri) {
+        core.sendAttachment(convo, uri)
+    }
+
+    /** Otwiera załącznik w aplikacji, która go obsługuje. */
+    fun openAttachment(m: Message) {
+        val id = m.attId ?: return
+        if (!m.attDone) {
+            toast("Plik jeszcze się ściąga")
+            return
+        }
+        val intent = Attachments.openIntent(ctx, id, m.attName ?: "zalacznik", m.attMime.orEmpty())
+        if (intent == null) {
+            toast("Pliku nie ma już na tym telefonie")
+            return
+        }
+        runCatching { ctx.startActivity(intent) }
+            .onFailure { toast("Brak aplikacji, która otworzy ten plik") }
+    }
+
+    /** Przekazuje załącznik dalej – do zapisania w galerii albo wysłania inną drogą. */
+    fun shareAttachment(m: Message) {
+        val id = m.attId ?: return
+        val intent = Attachments.shareIntent(ctx, id, m.attName ?: "zalacznik", m.attMime.orEmpty())
+        if (intent == null) {
+            toast("Pliku nie ma już na tym telefonie")
+            return
+        }
+        runCatching {
+            ctx.startActivity(Intent.createChooser(intent, "Zapisz lub wyślij").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }.onFailure { toast("Nie udało się udostępnić pliku") }
+    }
+
+    fun requestMissingParts(m: Message) = core.requestMissing(m.id)
+
+    fun resendAttachment(m: Message) {
+        core.resendAttachment(m.id)
+        toast("Nadaję plik ponownie")
+    }
+
+    /** Miejsce zajęte przez pobrane załączniki. */
+    fun attachmentBytes(): Long = Attachments.totalBytes(ctx)
+
+    fun clearAttachments() {
+        Attachments.clear(ctx)
+        toast("Usunięto pobrane pliki")
     }
 
     // endregion

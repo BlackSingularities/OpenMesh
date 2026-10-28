@@ -19,6 +19,12 @@ enum class PacketType {
 
     /** Potwierdzenie doręczenia wiadomości prywatnej. */
     ACK,
+
+    /** Jedna część załącznika (zdjęcia albo pliku). Części składa odbiorca. */
+    FILE,
+
+    /** Prośba o ponowne nadanie brakujących części załącznika. */
+    FILE_REQ,
 }
 
 /**
@@ -48,6 +54,26 @@ data class Packet(
             .encodeToByteArray()
 }
 
+/**
+ * Część załącznika. Wszystkie części jednego pliku mają to samo [fid]; opis pliku powtarza się
+ * w każdej z nich, żeby odbiorca mógł pokazać nazwę i rozmiar od pierwszego odebranego fragmentu.
+ */
+@Serializable
+data class Att(
+    val fid: String,
+    val name: String = "",
+    val mime: String = "",
+    val size: Long = 0,
+    /** Skrót SHA-256 całego pliku – odbiorca sprawdza, czy złożył go poprawnie. */
+    val sha: String = "",
+    val idx: Int = 0,
+    val cnt: Int = 1,
+    /** Fragment pliku zakodowany w base64. */
+    val data: String = "",
+    /** Dla [PacketType.FILE_REQ]: numery brakujących części. */
+    val miss: List<Int> = emptyList(),
+)
+
 /** Treść wiadomości (jawna albo zaszyfrowana w [Packet.body]). */
 @Serializable
 data class Content(
@@ -57,6 +83,7 @@ data class Content(
     val acc: Float? = null,
     val quick: Boolean = false,
     val battery: Int? = null,
+    val att: Att? = null,
 )
 
 @Serializable
@@ -82,8 +109,20 @@ data class Message(
     val encrypted: Boolean = false,
     val battery: Int? = null,
     val receivedAt: Long = ts,
+    /** Identyfikator załącznika = nazwa pliku w pamięci aplikacji. */
+    val attId: String? = null,
+    val attName: String? = null,
+    val attMime: String? = null,
+    val attSize: Long = 0,
+    /** Części odebrane (albo wysłane) i wszystkie – do pokazania postępu. */
+    val attParts: Int = 0,
+    val attTotal: Int = 0,
+    /** Plik jest już kompletny i zapisany na telefonie. */
+    val attDone: Boolean = false,
 ) {
     val hasLocation get() = lat != null && lon != null
+    val hasAttachment get() = attId != null
+    val isImage get() = attMime?.startsWith("image/") == true
 }
 
 /** Znane urządzenie w sieci (bezpośrednio albo przez innych). */
@@ -154,6 +193,10 @@ data class Settings(
     val sosAlarm: Boolean = true,
     val shareBattery: Boolean = true,
     val status: String = "",
+    /** Największy rozmiar wysyłanego załącznika (w kilobajtach) – sieć mesh jest wolna. */
+    val attachmentMaxKb: Int = 1536,
+    /** Zmniejszanie zdjęć przed wysłaniem, żeby zmieściły się w limicie. */
+    val shrinkPhotos: Boolean = true,
     val autoUpdate: Boolean = true,
     val autoInstall: Boolean = true,
     val lastUpdateCheck: Long = 0L,

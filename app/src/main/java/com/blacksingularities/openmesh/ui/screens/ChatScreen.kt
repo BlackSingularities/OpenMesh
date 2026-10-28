@@ -1,5 +1,23 @@
 package com.blacksingularities.openmesh.ui.screens
 
+import android.graphics.Bitmap
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.material.icons.rounded.AttachFile
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Downloading
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.InsertDriveFile
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import com.blacksingularities.openmesh.data.Attachments
+import com.blacksingularities.openmesh.mesh.FileTransfer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -25,6 +43,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -84,6 +104,7 @@ import com.blacksingularities.openmesh.ui.theme.Avatar
 import com.blacksingularities.openmesh.ui.theme.Field
 import com.blacksingularities.openmesh.ui.theme.IconCircle
 import com.blacksingularities.openmesh.ui.theme.Palette
+import com.blacksingularities.openmesh.ui.theme.PillButton
 import com.blacksingularities.openmesh.ui.theme.Pill
 import com.blacksingularities.openmesh.ui.theme.panel
 import com.blacksingularities.openmesh.util.Geo
@@ -133,6 +154,16 @@ fun ChatScreen(vm: MeshViewModel, convo: String) {
     var text by remember(convo) { mutableStateOf(vm.sharedText ?: drafts[convo] ?: "") }
     LaunchedEffect(convo) { vm.sharedText = null }
     var showQuick by remember { mutableStateOf(false) }
+    var showAttach by remember { mutableStateOf(false) }
+    // Wybieranie zdjec przez systemowy wybor mediow nie wymaga zadnych uprawnien.
+    val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        showAttach = false
+        if (uri != null) vm.sendAttachment(convo, uri)
+    }
+    val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        showAttach = false
+        if (uri != null) vm.sendAttachment(convo, uri)
+    }
     val list = rememberLazyListState()
     LaunchedEffect(messages.lastOrNull()?.id) { if (list.firstVisibleItemIndex < 3) list.animateScrollToItem(0) }
 
@@ -217,12 +248,54 @@ fun ChatScreen(vm: MeshViewModel, convo: String) {
             }
         }
 
+        AnimatedVisibility(showAttach, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                PillButton(
+                    "Zdjęcie",
+                    { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                    Modifier.weight(1f),
+                    icon = Icons.Rounded.Image,
+                    primary = false,
+                )
+                PillButton(
+                    "Plik",
+                    { pickFile.launch(arrayOf("*/*")) },
+                    Modifier.weight(1f),
+                    icon = Icons.Rounded.Description,
+                    primary = false,
+                )
+            }
+        }
+
         // Pole wiadomości
         Row(
             Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars).padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 8.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
-            IconCircle(Icons.Rounded.Bolt, "Szybkie odpowiedzi", { showQuick = !showQuick }, active = showQuick, size = 46.dp)
+            IconCircle(
+                Icons.Rounded.AttachFile,
+                "Załącz zdjęcie lub plik",
+                {
+                    showAttach = !showAttach
+                    showQuick = false
+                },
+                active = showAttach,
+                size = 46.dp,
+            )
+            Spacer(Modifier.width(6.dp))
+            IconCircle(
+                Icons.Rounded.Bolt,
+                "Szybkie odpowiedzi",
+                {
+                    showQuick = !showQuick
+                    showAttach = false
+                },
+                active = showQuick,
+                size = 46.dp,
+            )
             Spacer(Modifier.width(6.dp))
             if (vm.locating) {
                 Box(Modifier.size(46.dp), contentAlignment = Alignment.Center) {
@@ -301,7 +374,13 @@ private fun Bubble(vm: MeshViewModel, m: Message, showName: Boolean, first: Bool
                 .clip(shape)
                 .background(bg)
                 .combinedClickable(
-                    onClick = { if (m.hasLocation) vm.openMap(m.lat!!, m.lon!!, m.fromName) else vm.sheet = Sheet.MessageActions(m) },
+                    onClick = {
+                        when {
+                            m.hasLocation -> vm.openMap(m.lat!!, m.lon!!, m.fromName)
+                            m.hasAttachment && m.attDone -> vm.openAttachment(m)
+                            else -> vm.sheet = Sheet.MessageActions(m)
+                        }
+                    },
                     onLongClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         vm.sheet = Sheet.MessageActions(m)
@@ -314,6 +393,9 @@ private fun Bubble(vm: MeshViewModel, m: Message, showName: Boolean, first: Bool
             }
             if (m.hasLocation) {
                 LocationCard(vm, m, fg, dim)
+            }
+            if (m.hasAttachment) {
+                AttachmentCard(vm, m, fg, dim)
             }
             if (m.text.isNotBlank()) {
                 Text(
@@ -346,6 +428,120 @@ private fun Bubble(vm: MeshViewModel, m: Message, showName: Boolean, first: Bool
         }
         if (mine && last && m.status == MsgStatus.QUEUED) {
             Text("Czeka na kogoś w zasięgu", color = Palette.TextFaint, fontSize = 11.sp, modifier = Modifier.padding(end = 10.dp, top = 2.dp))
+        }
+    }
+}
+
+/**
+ * Załącznik w dymku: zdjęcie jako podgląd, plik jako wiersz z nazwą i rozmiarem.
+ * Dopóki części jadą przez sieć, w miejscu pliku widnieje postęp.
+ */
+@Composable
+private fun AttachmentCard(vm: MeshViewModel, m: Message, fg: Color, dim: Color) {
+    val ctx = LocalContext.current
+    val id = m.attId ?: return
+    val progress = if (m.attTotal > 0) m.attParts.toFloat() / m.attTotal else 0f
+    val waiting = !m.attDone
+    val sending = m.mine && m.attTotal > 0 && m.attParts < m.attTotal
+
+    if (m.isImage && m.attDone) {
+        val thumb by produceState<Bitmap?>(null, id) {
+            value = withContext(Dispatchers.IO) { Attachments.thumbnail(ctx, id) }
+        }
+        Column(Modifier.padding(top = if (m.sos || m.hasLocation) 6.dp else 2.dp)) {
+            val bitmap = thumb
+            if (bitmap != null) {
+                Image(
+                    bitmap.asImageBitmap(),
+                    m.attName ?: "Zdjęcie",
+                    modifier = Modifier
+                        .widthIn(max = 282.dp)
+                        .heightIn(max = 360.dp)
+                        .clip(RoundedCornerShape(14.dp)),
+                    contentScale = ContentScale.Fit,
+                )
+            } else {
+                Box(
+                    Modifier.size(180.dp).clip(RoundedCornerShape(14.dp)).background(Palette.CardHigher),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Rounded.Image, null, tint = Palette.TextFaint, modifier = Modifier.size(28.dp))
+                }
+            }
+            if (sending) {
+                Text(
+                    "Wysyłam… " + m.attParts + " z " + m.attTotal,
+                    color = dim,
+                    fontSize = 11.5.sp,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+        return
+    }
+
+    Column(Modifier.padding(top = if (m.sos || m.hasLocation) 6.dp else 2.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
+                    .background(if (fg == Palette.Ink) Palette.Ink.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    if (waiting) Icons.Rounded.Downloading else if (m.isImage) Icons.Rounded.Image else Icons.Rounded.InsertDriveFile,
+                    null,
+                    tint = fg,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.widthIn(max = 210.dp)) {
+                Text(
+                    m.attName ?: "Plik",
+                    color = fg,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    when {
+                        m.mine && sending -> "Wysyłam… " + m.attParts + " z " + m.attTotal + " części"
+                        m.mine -> FileTransfer.formatSize(m.attSize) + " · wysłane"
+                        waiting -> "Odbieram… " + m.attParts + " z " + m.attTotal + " części"
+                        else -> FileTransfer.formatSize(m.attSize)
+                    },
+                    color = dim,
+                    fontSize = 12.sp,
+                )
+            }
+        }
+        if (waiting || sending) {
+            Box(
+                Modifier
+                    .padding(top = 8.dp)
+                    .widthIn(min = 160.dp, max = 262.dp)
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .clip(Pill)
+                    .background(if (fg == Palette.Ink) Palette.Ink.copy(alpha = 0.12f) else Color.White.copy(alpha = 0.18f)),
+            ) {
+                Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).height(4.dp).clip(Pill).background(fg))
+            }
+        }
+        if (waiting && !m.mine) {
+            Text(
+                "Dokończ odbiór",
+                color = fg,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .clip(Pill)
+                    .background(if (fg == Palette.Ink) Palette.Ink.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.12f))
+                    .clickable { vm.requestMissingParts(m) }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            )
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.blacksingularities.openmesh.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,7 +19,10 @@ import androidx.compose.material.icons.rounded.BatteryStd
 import androidx.compose.material.icons.rounded.Bluetooth
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.PhotoSizeSelectLarge
 import androidx.compose.material.icons.rounded.FlashOn
 import androidx.compose.material.icons.rounded.Map
 import androidx.compose.material.icons.rounded.Search
@@ -61,6 +65,7 @@ import com.blacksingularities.openmesh.ui.theme.Field
 import com.blacksingularities.openmesh.ui.theme.Palette
 import com.blacksingularities.openmesh.ui.theme.PillButton
 import com.blacksingularities.openmesh.ui.theme.RowDivider
+import com.blacksingularities.openmesh.mesh.FileTransfer
 import com.blacksingularities.openmesh.ui.theme.SectionTitle
 import com.blacksingularities.openmesh.ui.theme.Segmented
 import com.blacksingularities.openmesh.ui.theme.SettingRow
@@ -215,6 +220,45 @@ fun SettingsTab(vm: MeshViewModel) {
                     icon = Icons.Rounded.Search,
                     onClick = { vm.openSearch() },
                 ) { Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, tint = Palette.TextFaint, modifier = Modifier.size(18.dp)) }
+            }
+        }
+        item { SectionTitle("Zdjęcia i pliki") }
+        item {
+            var used by remember(vm.permissionsTick) { mutableStateOf(vm.attachmentBytes()) }
+            SettingsGroup {
+                SettingRow(
+                    "Limit wysyłanego pliku",
+                    subtitle = "Przez Bluetooth plik jedzie w częściach po 12 kB – im większy, tym dłużej.",
+                    icon = Icons.Rounded.AttachFile,
+                )
+                Box(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    Segmented(
+                        listOf(512 to "0,5 MB", 1536 to "1,5 MB", 3072 to "3 MB"),
+                        s.attachmentMaxKb,
+                        { v -> vm.core.updateSettings { it.copy(attachmentMaxKb = v) } },
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                RowDivider()
+                SettingSwitch(
+                    "Zmniejszaj zdjęcia",
+                    s.shrinkPhotos,
+                    { v -> vm.core.updateSettings { it.copy(shrinkPhotos = v) } },
+                    subtitle = "Dobiera rozmiar i jakość tak, by zdjęcie zmieściło się w limicie (dłuższa krawędź 1280 px).",
+                    icon = Icons.Rounded.PhotoSizeSelectLarge,
+                )
+                RowDivider()
+                SettingRow(
+                    "Pobrane pliki",
+                    subtitle = "Zajmują " + FileTransfer.formatSize(used) + " w pamięci aplikacji",
+                    icon = Icons.Rounded.Folder,
+                    onClick = {
+                        vm.clearAttachments()
+                        used = vm.attachmentBytes()
+                    },
+                ) {
+                    Text("Usuń", color = Palette.Sos, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
         item { SectionTitle("Powiadomienia") }

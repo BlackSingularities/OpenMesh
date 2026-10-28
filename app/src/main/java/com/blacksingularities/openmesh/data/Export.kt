@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
 import com.blacksingularities.openmesh.mesh.Channel
+import com.blacksingularities.openmesh.mesh.FileTransfer
 import com.blacksingularities.openmesh.mesh.Message
 import com.blacksingularities.openmesh.mesh.MsgStatus
 import com.blacksingularities.openmesh.mesh.Peer
@@ -37,13 +38,26 @@ object Export {
             sb.append('[').append(stamp.format(Date(m.ts))).append("] ")
             sb.append(if (m.mine) myName else m.fromName).append(": ")
             if (m.sos) sb.append("SOS – ")
-            sb.append(m.text.ifBlank { if (m.hasLocation) "(pozycja)" else "(brak treści)" })
+            sb.append(
+                m.text.ifBlank {
+                    when {
+                        m.hasAttachment -> "(" + (m.attName ?: "załącznik") + ")"
+                        m.hasLocation -> "(pozycja)"
+                        else -> "(brak treści)"
+                    }
+                },
+            )
             val lat = m.lat
             val lon = m.lon
             if (lat != null && lon != null) {
                 sb.append("\n    pozycja: ").append(Geo.formatCoords(lat, lon))
                 sb.append(" (").append(Geo.formatDms(lat, lon)).append(')')
                 m.acc?.let { sb.append(", dokładność ").append(Geo.formatDistance(it)) }
+            }
+            if (m.hasAttachment) {
+                sb.append("\n    załącznik: ").append(m.attName ?: "plik")
+                sb.append(" (").append(FileTransfer.formatSize(m.attSize)).append(')')
+                if (!m.attDone) sb.append(" – niekompletny")
             }
             if (m.hops > 0) sb.append("\n    doszła przez ").append(m.hops).append(" węzłów")
             if (m.mine && m.status == MsgStatus.QUEUED) sb.append("\n    (nie wyszła jeszcze do sieci)")

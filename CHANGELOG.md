@@ -1,5 +1,20 @@
 # Zmiany
 
+## 0.3.0
+
+Zdjęcia i pliki przez sieć mesh.
+
+- **Załączniki**: zdjęcie z galerii albo dowolny plik jedzie w częściach po 12 kB – każda jako osobny podpisany pakiet, więc korzysta z przekazywania przez kolejne telefony i ze store-and-forward dokładnie jak wiadomości.
+- **Odbiór bez kolejności**: części mogą dojść w dowolnym porządku i różnymi drogami; po złożeniu plik jest sprawdzany skrótem SHA-256 i dopiero wtedy zapisywany.
+- **Brakujące części**: po chwili ciszy aplikacja sama prosi nadawcę o to, co nie doszło; można też dotknąć „Dokończ odbiór” albo nadać plik ponownie z drugiej strony.
+- **Szyfrowanie**: załączniki w rozmowach prywatnych i w kanałach z hasłem są szyfrowane tak samo jak tekst (AES-256-GCM), część po części.
+- **Zmniejszanie zdjęć**: zdjęcie jest skalowane do 1280 px i kompresowane tak, by zmieściło się w limicie – przez Bluetooth pełna klatka z aparatu nie ma szans.
+- **Podgląd w rozmowie**: zdjęcia widnieją w dymku, pliki jako wiersz z nazwą i rozmiarem; w trakcie przesyłania widoczny jest pasek postępu i liczba części.
+- **Otwieranie i zapisywanie**: dotknięcie otwiera załącznik w odpowiedniej aplikacji, a „Zapisz lub wyślij dalej” przekazuje go poza OpenMesh. Usunięcie wiadomości usuwa też plik.
+- **Ustawienia**: limit wysyłanego pliku (0,5 / 1,5 / 3 MB), przełącznik zmniejszania zdjęć oraz zajęte miejsce z przyciskiem usunięcia pobranych plików.
+- Zapis rozmowy w eksporcie wymienia załączniki wraz z rozmiarem.
+- Uwaga o zgodności: części załączników rozumieją tylko telefony z 0.3.0 – starsze wersje przekażą zwykłe wiadomości, ale nie pliki.
+
 ## 0.2.0
 
 Szukanie, porządek w rozmowach, mapa okolicy i sygnalizacja światłem.

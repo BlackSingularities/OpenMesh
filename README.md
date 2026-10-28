@@ -35,6 +35,7 @@ Najnowsza wersja jest zawsze w **[Releases → Latest](../../releases/latest)**.
 | **Szukanie** | Jedno pole przeszukuje całą historię: wiadomości, kanały i osoby – także te z archiwum. |
 | **Przypinanie i archiwum** | Ważne rozmowy na górze listy, resztę można schować. Przytrzymanie rozmowy otwiera jej opcje. |
 | **Eksport** | Zapis rozmowy albo całej historii do pliku tekstowego (czas, autor, pozycje) przez „Udostępnij”. |
+| **Zdjęcia i pliki** | Załącznik jedzie w częściach po 12 kB jako zwykłe pakiety mesh – z przekazywaniem, store-and-forward i szyfrowaniem. Zdjęcia są zmniejszane do 1280 px, złożony plik jest sprawdzany skrótem SHA-256, a brakujące części aplikacja doprasza sama. |
 
 ### Bezpieczeństwo w terenie
 | Funkcja | Opis |
@@ -50,8 +51,13 @@ Najnowsza wersja jest zawsze w **[Releases → Latest](../../releases/latest)**.
 - Każdy pakiet podpisany **ECDSA** – nie da się podszyć pod nadawcę ani zmienić treści po drodze.
 - Rozmowy prywatne: **ECDH + AES-256-GCM**. Kanały z hasłem: **PBKDF2-HMAC-SHA256 + AES-256-GCM**.
 - Kanały jawne i SOS są czytelne dla wszystkich – celowo.
+- Załączniki idą tym samym kanałem co tekst: część po części, każda podpisana i (w rozmowach prywatnych oraz kanałach z hasłem) zaszyfrowana. Plik zapisuje się dopiero, gdy skrót SHA-256 całości się zgadza.
 - Odcisk klucza do porównania na obu telefonach, blokowanie osób, nowa tożsamość, **tryb paniki** (natychmiastowe usunięcie wszystkich danych).
 - Brak serwerów, kont, numerów telefonu i analityki. Internet jest używany wyłącznie do sprawdzania aktualizacji.
+
+## Zdjęcia i pliki w praktyce
+
+Jedna część to 12 kB, między częściami jest krótka przerwa, żeby zwykłe wiadomości dalej przechodziły. Zdjęcie o rozmiarze 300 kB to kilkadziesiąt części i zwykle kilkanaście sekund przy bezpośrednim połączeniu; 3 MB przez kilka skoków to już kilka minut. Części, które nie doszły, aplikacja doprasza u nadawcy – wystarczy, że oba telefony znajdą się kiedykolwiek w jednej sieci.
 
 ## Zasięg
 

@@ -30,6 +30,9 @@ import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Downloading
+import androidx.compose.material.icons.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.SaveAlt
 import androidx.compose.material.icons.rounded.FlashOn
 import androidx.compose.material.icons.rounded.Inventory2
 import androidx.compose.material.icons.rounded.PushPin
@@ -70,6 +73,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blacksingularities.openmesh.BuildConfig
 import com.blacksingularities.openmesh.mesh.Channel
+import com.blacksingularities.openmesh.mesh.FileTransfer
+import com.blacksingularities.openmesh.mesh.Notifier.plural
 import com.blacksingularities.openmesh.mesh.Crypto
 import com.blacksingularities.openmesh.mesh.Message
 import com.blacksingularities.openmesh.mesh.MsgStatus
@@ -518,6 +523,13 @@ private fun ColumnScope.MessageSheet(vm: MeshViewModel, m: Message) {
             )
         }
         if (m.encrypted) add("Szyfrowana")
+        if (m.hasAttachment) {
+            add(
+                "Załącznik: " + (m.attName ?: "plik") + " · " + FileTransfer.formatSize(m.attSize) +
+                    if (m.attTotal > 0) " · " + m.attTotal + " " + plural(m.attTotal, "część", "części", "części") else "",
+            )
+            if (!m.attDone) add("Brakuje " + (m.attTotal - m.attParts) + " z " + m.attTotal + " części")
+        }
         if (m.lat != null && m.lon != null) add("Pozycja: " + Geo.formatDms(m.lat, m.lon))
     }
     details.forEach { Text(it, color = Palette.TextDim, fontSize = 13.sp, lineHeight = 19.sp) }
@@ -536,19 +548,46 @@ private fun ColumnScope.MessageSheet(vm: MeshViewModel, m: Message) {
             ActionRow(Icons.Rounded.ContentCopy, "Kopiuj współrzędne") { vm.copy(Geo.formatCoords(m.lat, m.lon) + " (" + Geo.formatDms(m.lat, m.lon) + ")") }
             RowDivider()
         }
-        if (m.mine) {
+        if (m.hasAttachment && m.attDone) {
+            ActionRow(Icons.Rounded.OpenInNew, if (m.isImage) "Otwórz zdjęcie" else "Otwórz plik") {
+                vm.openAttachment(m)
+                vm.sheet = null
+            }
+            RowDivider()
+            ActionRow(Icons.Rounded.SaveAlt, "Zapisz lub wyślij dalej") {
+                vm.shareAttachment(m)
+                vm.sheet = null
+            }
+            RowDivider()
+        }
+        if (m.hasAttachment && !m.attDone && !m.mine) {
+            ActionRow(Icons.Rounded.Downloading, "Dokończ odbiór") {
+                vm.requestMissingParts(m)
+                vm.sheet = null
+            }
+            RowDivider()
+        }
+        if (m.mine && m.hasAttachment) {
+            ActionRow(Icons.Rounded.Refresh, "Nadaj plik ponownie") {
+                vm.resendAttachment(m)
+                vm.sheet = null
+            }
+            RowDivider()
+        } else if (m.mine) {
             ActionRow(Icons.Rounded.Refresh, if (m.sos) "Nadaj SOS ponownie" else "Wyślij ponownie") {
                 vm.core.resend(m)
                 vm.sheet = null
             }
             RowDivider()
         }
-        ActionRow(Icons.Rounded.Share, "Udostępnij poza OpenMesh") {
+        if (!m.hasAttachment) {
+            ActionRow(Icons.Rounded.Share, "Udostępnij poza OpenMesh") {
             val loc = if (m.lat != null && m.lon != null) "\n📍 " + Geo.formatCoords(m.lat, m.lon) else ""
             vm.shareOutside(m.fromName + ": " + m.text + loc)
+            }
+            RowDivider()
         }
-        RowDivider()
-        ActionRow(Icons.Rounded.Delete, "Usuń u mnie", danger = true) {
+        ActionRow(Icons.Rounded.Delete, if (m.hasAttachment) "Usuń wiadomość i plik" else "Usuń u mnie", danger = true) {
             vm.core.deleteMessage(m.id)
             vm.sheet = null
         }

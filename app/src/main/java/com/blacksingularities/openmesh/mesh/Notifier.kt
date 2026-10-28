@@ -96,6 +96,8 @@ object Notifier {
         val body = when {
             m.hasLocation && m.text.isBlank() -> "📍 Udostępniono pozycję"
             m.hasLocation -> "📍 " + m.text
+            m.isImage -> "📷 Zdjęcie"
+            m.hasAttachment -> "📎 " + (m.attName ?: "Plik")
             else -> m.text
         }
         val n = Notification.Builder(ctx, CH_MESSAGES)
