@@ -1,5 +1,11 @@
 # Zmiany
 
+## 0.3.1
+
+- Nowa strona aplikacji z opisem funkcji.
+- Jednolita informacja o autorze (Adam Rędzikowski · redzikowski.com) i przycisk „Postaw kawę”.
+- Usunięte odnośniki do repozytorium z interfejsu.
+
 ## 0.3.0
 
 Zdjęcia i pliki przez sieć mesh.
