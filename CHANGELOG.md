@@ -1,5 +1,9 @@
 # Zmiany
 
+## 0.3.3
+
+- Dopasowane kolorystycznie tła ikon aplikacji i spójne zasoby graficzne.
+
 ## 0.3.1
 
 - Nowa strona aplikacji z opisem funkcji.
