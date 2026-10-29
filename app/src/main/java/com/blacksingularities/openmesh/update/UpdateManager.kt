@@ -30,7 +30,7 @@ import java.net.URL
  * system aktualizuje ją bez dodatkowego potwierdzenia.
  */
 object UpdateManager {
-    val API = "https://api.github.com/repos/" + BuildConfig.UPDATE_REPO + "/releases/latest"
+    val API = "https://redzikowski.com/api/github/repos/" + BuildConfig.UPDATE_REPO + "/releases/latest"
     const val ACTION_STATUS = "com.blacksingularities.openmesh.UPDATE_STATUS"
     private const val RESTART_KEY = "update.restart"
     private const val CHANNEL = "updates"
