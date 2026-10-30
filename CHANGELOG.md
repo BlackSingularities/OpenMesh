@@ -1,5 +1,10 @@
 # Zmiany
 
+## 0.3.4
+
+- Nowa profesjonalna ikona aplikacji i dopasowane kolorystycznie jasne tło.
+- Spójne ikony adaptacyjne, monochromatyczne i ekran uruchamiania.
+
 ## 0.3.3
 
 - Dopasowane kolorystycznie tła ikon aplikacji i spójne zasoby graficzne.

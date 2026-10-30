@@ -1,5 +1,7 @@
 # OpenMesh
 
+<img src="artwork/app-icon.png" alt="OpenMesh" width="128" />
+
 **Czat offline przez Bluetooth i Wi‑Fi Direct – bez internetu, bez serwerów, bez kont.** Telefony łączą się bezpośrednio, a wiadomości przeskakują od urządzenia do urządzenia. Przydaje się w górach, na festiwalach, w samolocie i podczas awarii sieci.
 
 [![Build & Release](../../actions/workflows/android.yml/badge.svg)](../../actions/workflows/android.yml)
