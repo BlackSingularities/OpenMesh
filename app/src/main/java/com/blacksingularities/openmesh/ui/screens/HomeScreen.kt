@@ -1,5 +1,8 @@
 package com.blacksingularities.openmesh.ui.screens
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -229,10 +232,10 @@ private fun BottomBar(vm: MeshViewModel, modifier: Modifier) {
     val total = unread.values.sum()
     Row(
         modifier
+            .fillMaxWidth()
+            .background(Palette.Ink)
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(bottom = 12.dp)
-            .panel(Pill, Palette.CardHigh)
-            .padding(5.dp),
+            .padding(horizontal = 6.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -246,30 +249,34 @@ private fun BottomBar(vm: MeshViewModel, modifier: Modifier) {
 }
 
 @Composable
-private fun NavItem(icon: ImageVector, label: String, active: Boolean, badge: Int, onClick: () -> Unit) {
-    Row(
+private fun RowScope.NavItem(icon: ImageVector, label: String, active: Boolean, badge: Int, onClick: () -> Unit) {
+    // Styl wspólny dla aplikacji Open: wybrana zakładka to biały kafel z czarną ikoną i podpisem.
+    val bg by animateColorAsState(if (active) Color.White else Color.Transparent, label = "tabBg")
+    val tint by animateColorAsState(if (active) Color.Black else Palette.TextDim, label = "tabTint")
+    Column(
         Modifier
-            .height(48.dp)
-            .clip(Pill)
-            .background(if (active) Color.White else Color.Transparent)
+            .weight(1f)
+            .clip(RoundedCornerShape(6.dp))
+            .background(bg)
             .clickable(onClick = onClick)
-            .padding(horizontal = if (active) 16.dp else 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(top = 7.dp, bottom = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box {
-            Icon(icon, label, tint = if (active) Palette.Ink else Palette.TextDim, modifier = Modifier.size(22.dp))
-            if (badge > 0 && !active) {
-                Box(Modifier.align(Alignment.TopEnd).padding(start = 14.dp).size(9.dp).clip(CircleShape).background(Color.White))
-            }
-        }
-        if (active) {
-            Spacer(Modifier.width(8.dp))
-            Text(label, color = Palette.Ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Icon(icon, label, tint = tint, modifier = Modifier.size(21.dp))
             if (badge > 0) {
-                Spacer(Modifier.width(6.dp))
-                CountBadge(badge, color = Palette.Ink)
+                Box(Modifier.align(Alignment.TopEnd).padding(start = 14.dp).size(8.dp).clip(CircleShape).background(if (active) Palette.Ink else Color.White))
             }
         }
+        Spacer(Modifier.height(3.dp))
+        Text(
+            label,
+            color = tint,
+            fontSize = 10.sp,
+            fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            softWrap = false,
+        )
     }
 }
 
