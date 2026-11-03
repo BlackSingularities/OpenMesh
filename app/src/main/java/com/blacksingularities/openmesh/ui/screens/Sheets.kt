@@ -654,6 +654,10 @@ private fun ColumnScope.AboutSheet() {
         "Pomysł i wykonanie: Adam Rędzikowski · redzikowski.com", color = Palette.TextDim, fontSize = 13.sp,
         modifier = Modifier.padding(top = 16.dp).clickable { runCatching { uri.openUri("https://redzikowski.com") } },
     )
+    Text(
+        "kontakt@redzikowski.com", color = Palette.TextDim, fontSize = 13.sp,
+        modifier = Modifier.padding(top = 6.dp).clickable { runCatching { uri.openUri("mailto:kontakt@redzikowski.com") } },
+    )
     PillButton(
         "Postaw kawę", { runCatching { uri.openUri("https://buycoffee.to/adamredzikowski") } },
         Modifier.fillMaxWidth().padding(top = 12.dp), icon = Icons.Rounded.LocalCafe,
