@@ -643,7 +643,7 @@ private fun ColumnScope.AboutSheet() {
         "Bezpieczeństwo" to "Każda wiadomość jest podpisana ECDSA P-256 – nie da się podszyć pod nadawcę. Rozmowy prywatne: ECDH + AES-256-GCM. Kanały z hasłem: PBKDF2 + AES-256-GCM. Kanały jawne i SOS są czytelne dla wszystkich.",
         "Prywatność" to "Brak serwerów, kont i numerów telefonu. Pozycja wychodzi tylko wtedy, gdy ją wyślesz. Nick i klucz publiczny widzą osoby w sieci.",
         "Zasięg" to "Zwykle 10–100 m między telefonami, w otwartym terenie więcej. Każdy dodatkowy telefon wydłuża sieć.",
-        "Aktualizacje" to "Gdy telefon ma internet, OpenMesh sprawdza GitHub Releases i aktualizuje się sam.",
+        "Aktualizacje" to "Gdy telefon ma internet, OpenMesh sprawdza, czy jest nowa wersja, i aktualizuje się sam.",
     )
     points.forEach { (t, d) ->
         Text(t, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))

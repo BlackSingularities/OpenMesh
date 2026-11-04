@@ -337,7 +337,7 @@ fun SettingsTab(vm: MeshViewModel) {
                     "Sprawdzaj automatycznie",
                     s.autoUpdate,
                     { v -> vm.core.updateSettings { it.copy(autoUpdate = v) } },
-                    subtitle = "Gdy telefon ma internet – co kilka godzin, z GitHub Releases",
+                    subtitle = "Gdy telefon ma internet – co kilka godzin",
                     icon = Icons.Rounded.SystemUpdate,
                 )
                 RowDivider()

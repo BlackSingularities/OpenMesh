@@ -44,10 +44,10 @@ fun parseRelease(json: String, assetSuffix: String): ReleaseInfo {
     if (url.isEmpty()) error("Wydanie nie zawiera pliku " + assetSuffix.removePrefix(".").uppercase())
     return ReleaseInfo(
         version = o.str("tag_name").removePrefix("v"),
-        notes = o.str("body").substringBefore("\n---").trim(),
+        notes = "",
         assetUrl = url,
         sizeBytes = size,
-        pageUrl = o.str("html_url"),
+        pageUrl = "",
     )
 }
 

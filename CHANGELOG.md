@@ -1,5 +1,9 @@
 # Zmiany
 
+## 0.3.5
+
+- Komunikat o nowej wersji bez listy zmian, linków i informacji, skąd pobierana jest aktualizacja.
+
 ## 0.3.4
 
 - Nowa profesjonalna ikona aplikacji i dopasowane kolorystycznie jasne tło.

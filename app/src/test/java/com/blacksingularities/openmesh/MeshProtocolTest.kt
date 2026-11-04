@@ -98,7 +98,7 @@ class MeshProtocolTest {
         """.trimIndent()
         val r = parseRelease(body, ".apk")
         assertEquals("0.1.3", r.version)
-        assertEquals("Zmiany", r.notes)
+        assertEquals("", r.notes)
         assertEquals(1234L, r.sizeBytes)
     }
 }
